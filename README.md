@@ -1,6 +1,6 @@
 # Election Operations Platform
 
-A production-quality backend system designed to manage complete election workflows while remaining responsive during peak polling traffic. The platform handles voter and candidate registration, secure JWT-based role access, asynchronous vote processing via a Redis/Celery pipeline, a live operations dashboard, and load simulation tooling.
+A production-quality backend system designed to manage complete election workflows while remaining responsive during peak polling traffic. The platform handles voter and candidate registration, secure JWT-based role access, asynchronous vote processing via a Redis/Celery pipeline, a live operations dashboard, and Performance & Load Testing tooling.
 
 ## Overview
 
@@ -15,7 +15,7 @@ The Election Operations Platform is built as a modular monolith using Python/Fla
 ## Quick Start
 
 ### Prerequisites
-- Python 3.11+
+- Python 3.13+
 - PostgreSQL 15+
 - Redis 7+
 - Docker & Docker Compose (optional, for containerized deployment)
@@ -30,8 +30,8 @@ The Election Operations Platform is built as a modular monolith using Python/Fla
 
 2. **Create virtual environment**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   source venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
 3. **Install dependencies**
@@ -93,7 +93,7 @@ election-operations-platform/
 
 ## Technology Stack
 
-- **Backend**: Flask 3.0
+- **Backend**: Flask 3.1
 - **Database**: PostgreSQL 15+
 - **ORM**: SQLAlchemy 2.0
 - **Authentication**: Flask-JWT-Extended

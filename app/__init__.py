@@ -8,8 +8,12 @@ multiple app instances with different configurations (dev, test, prod).
 from flask import Flask, jsonify
 from sqlalchemy import text
 
+from flask import Flask, jsonify
+from sqlalchemy import text
+
 from app.config.settings import get_config
 from app.extensions import db, jwt
+from app.auth import auth_bp
 
 
 def create_app(config_name=None):
@@ -37,6 +41,9 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
+    
+    # Register blueprints
+    app.register_blueprint(auth_bp)
     
     # Register health check endpoint
     @app.route('/health', methods=['GET'])
