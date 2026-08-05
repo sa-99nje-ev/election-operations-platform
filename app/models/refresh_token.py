@@ -11,10 +11,10 @@ from datetime import datetime
 from sqlalchemy import String, DateTime, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.extensions import db
+from app.database import Base
 
 
-class RefreshToken(db.Model):
+class RefreshToken(Base):
     """
     JWT refresh token model for session management.
     

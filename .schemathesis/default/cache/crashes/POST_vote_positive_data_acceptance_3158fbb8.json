@@ -1,0 +1,84 @@
+{
+  "operation": "POST /vote",
+  "method": "POST",
+  "path_template": "/vote",
+  "fingerprint": "3158fbb8",
+  "case_id": "upH49E",
+  "code_sample": "curl -X POST -H 'Authorization: [Filtered]' -H 'Content-Type: application/json' -d '{\"voter_id\": \"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\", \"candidate_id\": \"b1fefd00-0d1c-4fa9-cc7e-7cc0ce491b22\", \"booth_id\": \"c20f0e11-1e2d-40ba-dd8f-8dd1df502c33\"}' http://localhost:8000/vote",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8000/vote",
+      "url_template": "http://localhost:8000/vote",
+      "headers": {
+        "User-Agent": "schemathesis/4.24.3",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "Authorization": "[Filtered]",
+        "X-Schemathesis-TestCaseId": "upH49E",
+        "Content-Type": "application/json",
+        "Content-Length": "160"
+      },
+      "response": {
+        "status_code": 422,
+        "headers": {
+          "date": "Tue, 04 Aug 2026 18:16:16 GMT",
+          "server": "uvicorn",
+          "content-length": "332",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":[{\"type\":\"uuid_version\",\"loc\":[\"body\",\"candidate_id\"],\"msg\":\"UUID version 4 expected\",\"input\":\"b1fefd00-0d1c-4fa9-cc7e-7cc0ce491b22\",\"ctx\":{\"expected_version\":4}},{\"type\":\"uuid_version\",\"loc\":[\"body\",\"booth_id\"],\"msg\":\"UUID version 4 expected\",\"input\":\"c20f0e11-1e2d-40ba-dd8f-8dd1df502c33\",\"ctx\":{\"expected_version\":4}}]}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "positive_data_acceptance",
+          "status": "failure",
+          "message": "API rejected schema-compliant request\n\nValid data should have been accepted\nExpected: 2xx, 401, 403, 404, 409, 5xx"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 0.00024680000205989927,
+          "mode": "positive"
+        },
+        "components": {},
+        "phase": {
+          "name": "examples",
+          "data": {
+            "type": "ExamplesPhaseData",
+            "description": "Positive test case",
+            "location": null,
+            "parameter": null,
+            "parameter_location": null,
+            "mutations": []
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {}
+      },
+      "path": "/vote",
+      "path_parameters": {},
+      "query": {},
+      "case_headers": {
+        "Authorization": "[Filtered]"
+      },
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "voter_id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+          "candidate_id": "b1fefd00-0d1c-4fa9-cc7e-7cc0ce491b22",
+          "booth_id": "c20f0e11-1e2d-40ba-dd8f-8dd1df502c33"
+        }
+      },
+      "media_type": "application/json",
+      "parent_index": null
+    }
+  ]
+}

@@ -10,10 +10,10 @@ import uuid
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.extensions import db
+from app.database import Base
 
 
-class Candidate(db.Model):
+class Candidate(Base):
     """
     Election candidate model.
     

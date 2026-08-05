@@ -42,7 +42,7 @@ class PollingBoothRepository(BaseRepository[PollingBooth]):
             PollingBooth entity if found, None otherwise
         """
         return self.session.query(PollingBooth).filter(
-            PollingBooth.code == code
+            PollingBooth.booth_code == code
         ).first()
     
     def get_by_constituency(self, constituency_id: uuid.UUID) -> List[PollingBooth]:
@@ -158,7 +158,7 @@ class PollingBoothRepository(BaseRepository[PollingBooth]):
             True if code exists, False otherwise
         """
         query = self.session.query(PollingBooth).filter(
-            PollingBooth.code == code
+            PollingBooth.booth_code == code
         )
         
         if exclude_polling_booth_id:

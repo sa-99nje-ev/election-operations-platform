@@ -101,7 +101,7 @@ class CandidateRepository(BaseRepository[Candidate]):
             List of active candidates
         """
         return self.session.query(Candidate).filter(
-            Candidate.deleted_at.is_(None)
+            True
         ).all()
     
     def search_candidates(
@@ -168,7 +168,7 @@ class CandidateRepository(BaseRepository[Candidate]):
         """
         return self.session.query(Candidate).filter(
             Candidate.constituency_id == constituency_id,
-            Candidate.deleted_at.is_(None)
+            True
         ).count()
     
     def get_candidate_with_user(self, candidate_id: uuid.UUID) -> Optional[Candidate]:
@@ -218,7 +218,7 @@ class CandidateRepository(BaseRepository[Candidate]):
         """
         return self.session.query(Candidate).filter(
             Candidate.constituency_id == constituency_id,
-            Candidate.deleted_at.is_(None)
+            True
         ).all()
     
     def update_party(self, candidate_id: uuid.UUID, party: str) -> bool:

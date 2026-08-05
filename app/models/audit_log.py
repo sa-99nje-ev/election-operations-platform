@@ -12,10 +12,10 @@ from sqlalchemy import String, DateTime, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from app.extensions import db
+from app.database import Base
 
 
-class AuditLog(db.Model):
+class AuditLog(Base):
     """
     Security audit log model (append-only).
     
