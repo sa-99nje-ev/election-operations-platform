@@ -1,32 +1,25 @@
-# Environment
-.env
-venv/
-env/
-ENV/
-
-# Python
+﻿# Python / Bytecode
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
 
-# Testing
+# Testing & Caching
 .pytest_cache/
 .coverage
 htmlcov/
-*.log
+.schemathesis/
 
-# IDE
+# Environment variables & local databases
+.env
+instance/
+*.db
+*.sqlite3
+
+# IDE / OS
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# Database migrations
-migrations/versions/*.pyc
-
-# OS
-.DS_Store
 Thumbs.db
+Desktop.ini
