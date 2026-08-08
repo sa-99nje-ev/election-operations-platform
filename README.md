@@ -30,37 +30,38 @@ The system separates API handling, business logic, persistence, background proce
 
 ---
 
-## 🏗️ Architecture
+# 🏗 Architecture
 
-┌─────────────────────┐
-│ Client / UI │
-└──────────┬──────────┘
-│
-▼
-┌─────────────────────┐
-│ FastAPI │
-│ REST API Layer │
-└──────────┬──────────┘
-│
-┌──────────────┼──────────────┐
-│ │ │
-▼ ▼ ▼
-┌──────────────┐ ┌────────────┐ ┌──────────────┐
-│ Services │ │ Auth & │ │ Domain │
-│ Layer │ │ Security │ │ Models │
-└──────┬───────┘ └────────────┘ └──────┬───────┘
-│ │
-▼ ▼
-┌──────────────┐ ┌──────────────┐
-│ SQLAlchemy │───────────────▶│ PostgreSQL │
-│ Async ORM │ │ Database │
-└──────────────┘ └──────────────┘
-│
-▼
-┌──────────────┐
-│ ARQ Workers │
-│ + Redis │
-└──────────────┘
+```text
+                    ┌──────────────────────┐
+                    │       Client         │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │      FastAPI API     │
+                    │                      │
+                    │  Routers / Schemas   │
+                    │  Authentication      │
+                    │  Authorization       │
+                    └──────────┬───────────┘
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+       ┌──────────────────┐       ┌──────────────────┐
+       │   PostgreSQL     │       │      Redis       │
+       │                  │       │                  │
+       │ SQLAlchemy 2.0   │       │ ARQ Task Queue   │
+       │ Election Data    │       │                  │
+       └──────────────────┘       └────────┬─────────┘
+                                           │
+                                           ▼
+                                  ┌──────────────────┐
+                                  │    ARQ Worker    │
+                                  │                  │
+                                  │ Vote Processing  │
+                                  └──────────────────┘
 
 
 ## ✨ Core Features
