@@ -1,4 +1,4 @@
-"""
+﻿"""
 Alembic migration for adding composite and foreign key indexes.
 Optimizes lookup performance for candidate, voter, booth, and voting queries.
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '002_performance_indexes'
-down_revision = None
+down_revision = '20577bf67e5c'
 branch_labels = None
 depends_on = None
 

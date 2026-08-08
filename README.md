@@ -1,279 +1,567 @@
-# Election Operations Platform
+﻿# Election Operations Platform
 
-A production-ready backend application for managing election workflows, built with **FastAPI** and **async Python**.
+A production-oriented backend platform for managing election operations, built with **FastAPI**, **async Python**, **PostgreSQL**, **Redis**, and **SQLAlchemy 2.0**.
+
+The platform provides secure election-domain management, role-based authentication, asynchronous vote processing, audit logging, database migrations, automated testing, performance testing, and containerized deployment.
 
 ---
 
-# 🚀 Features
+## 🚀 Features
 
-- **Authentication & RBAC**
-  - JWT-based authentication
-  - Role-based access control (Admin, Officer, Voter, Candidate)
+### Authentication & Authorization
 
-- **Domain Management**
-  - Full CRUD for constituencies
-  - Polling booths
-  - Voters
-  - Candidates
+- JWT-based authentication
+- Role-based access control
+- Supported roles:
+  - Admin
+  - Officer
+  - Voter
+  - Candidate
+- Password hashing with Passlib + bcrypt
+- JWT access/refresh token support
+- Refresh-token persistence and invalidation
 
-- **Async Vote Processing**
-  - ARQ + Redis background queue
-  - Non-blocking vote recording
+### Election Domain Management
 
-- **Audit Logging**
-  - Complete audit trail for security-critical operations
+- Constituency management
+- Polling booth management
+- Voter management
+- Candidate management
+- Voting record management
+- Relational integrity enforced through PostgreSQL foreign keys
 
-- **Performance Testing**
-  - Pytest benchmark suite
-  - Locust load testing
+### Asynchronous Vote Processing
 
-- **Database Migrations**
-  - Alembic version-controlled schema migrations
+- ARQ background task processing
+- Redis-backed task queue
+- Non-blocking vote processing
+- Idempotent vote requests using `request_id`
+- Background processing separated from API request handling
 
-- **Containerized Deployment**
-  - Docker
-  - Docker Compose
+### Audit & Security
+
+- Security-critical operations recorded through audit logs
+- Actor tracking
+- Target tracking
+- Operation outcome tracking
+- IP address recording
+- Database-level referential integrity
+
+### Database
+
+- PostgreSQL
+- SQLAlchemy 2.0 async ORM
+- `asyncpg` PostgreSQL driver
+- Alembic migrations
+- Version-controlled database schema
+- Composite indexes for performance-critical queries
+- Foreign-key constraints and uniqueness constraints
+
+### Testing & Quality
+
+- Pytest
+- pytest-asyncio
+- HTTPX
+- pytest-cov
+- Factory Boy
+- Flake8
+- Performance test suite
+- Worker scaling tests
+- Database persistence tests
+- Vote pipeline tests
+- Reliability/integrity tests
+
+### CI/CD
+
+GitHub Actions automatically validates:
+
+- Code quality
+- Test suite
+- Coverage generation
+- Docker build
+- Docker Compose configuration
+
+### Containerization
+
+- Docker
+- Docker Compose
+- PostgreSQL service
+- Redis service
+- FastAPI application
+- ARQ worker
 
 ---
 
 # 🛠 Tech Stack
 
 | Component | Technology |
-|-----------|------------|
-| Framework | FastAPI 0.111+ |
-| Database | PostgreSQL 15+ (Async SQLAlchemy 2.0) |
-| Task Queue | ARQ + Redis |
-| Authentication | JWT + bcrypt |
-| Testing | Pytest, pytest-asyncio, HTTPX |
-| Load Testing | Locust |
-| Deployment | Docker, Docker Compose |
+|---|---|
+| Backend Framework | FastAPI |
+| Language | Python 3.10+ |
+| ORM | SQLAlchemy 2.0 |
+| Database | PostgreSQL 15+ |
+| Async PostgreSQL Driver | asyncpg |
+| Async SQLite Testing | aiosqlite |
 | Migrations | Alembic |
+| Background Processing | ARQ |
+| Message Broker | Redis |
+| Authentication | JWT / python-jose |
+| Password Hashing | Passlib + bcrypt |
+| Validation | Pydantic 2 |
+| API Testing | Pytest + HTTPX |
+| Async Testing | pytest-asyncio |
+| Test Data | Factory Boy |
+| Coverage | pytest-cov |
+| Load Testing | Locust |
+| Code Quality | Flake8, Black, isort, mypy |
+| Security Analysis | Bandit, pip-audit |
+| Containerization | Docker + Docker Compose |
+| CI/CD | GitHub Actions |
 
 ---
 
-# 📁 Project Structure
+# 🏗 Architecture
 
 ```text
+                    ┌──────────────────────┐
+                    │       Client         │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │      FastAPI API     │
+                    │                      │
+                    │  Routers / Schemas   │
+                    │  Authentication      │
+                    │  Authorization       │
+                    └──────────┬───────────┘
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+       ┌──────────────────┐       ┌──────────────────┐
+       │   PostgreSQL     │       │      Redis       │
+       │                  │       │                  │
+       │ SQLAlchemy 2.0   │       │ ARQ Task Queue   │
+       │ Election Data    │       │                  │
+       └──────────────────┘       └────────┬─────────┘
+                                           │
+                                           ▼
+                                  ┌──────────────────┐
+                                  │    ARQ Worker    │
+                                  │                  │
+                                  │ Vote Processing  │
+                                  └──────────────────┘
+📁 Project Structure
 election-operations-platform/
 │
 ├── app/
-│   ├── models/             # SQLAlchemy ORM models
-│   ├── repositories/       # Data access layer
-│   ├── services/           # Business logic
-│   ├── routers/            # FastAPI endpoints
-│   ├── schemas/            # Pydantic schemas
-│   ├── core/               # Configuration & settings
-│   └── workers/            # ARQ background workers
+│   ├── core/
+│   │   ├── configuration/
+│   │   ├── security.py
+│   │   └── ...
+│   │
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── constituency.py
+│   │   ├── voter.py
+│   │   ├── candidate.py
+│   │   ├── polling_booth.py
+│   │   ├── voting_record.py
+│   │   ├── audit_log.py
+│   │   └── refresh_token.py
+│   │
+│   ├── repositories/
+│   │
+│   ├── routers/
+│   │
+│   ├── schemas/
+│   │
+│   ├── services/
+│   │
+│   ├── workers/
+│   │
+│   ├── arq_worker.py
+│   │
+│   ├── database.py
+│   └── main.py
+│
+├── migrations/
+│   ├── env.py
+│   └── versions/
+│       ├── 20577bf67e5c_initial_schema.py
+│       ├── 002_performance_indexes.py
+│       └── 917949da489c_migrate_to_fastapi_async.py
 │
 ├── tests/
-│   ├── performance/        # Performance benchmarks
-│   ├── unit/               # Unit tests
-│   └── integration/        # API integration tests
+│   ├── performance/
+│   │   ├── test_api_latency.py
+│   │   ├── test_database.py
+│   │   ├── test_reliability.py
+│   │   ├── test_vote_pipeline.py
+│   │   └── test_worker_scaling.py
+│   │
+│   ├── unit/
+│   │   ├── test_services.py
+│   │   └── test_worker.py
+│   │
+│   ├── test_api.py
+│   ├── test_domain.py
+│   └── conftest.py
 │
-├── migrations/             # Alembic database migrations
 ├── requirements.txt
+├── alembic.ini
 ├── Dockerfile
 ├── docker-compose.yml
+├── pytest.ini
 └── README.md
-```
+🚀 Getting Started
+Prerequisites
 
----
+Install the following:
 
-# 🚀 Getting Started
-
-## Prerequisites
-
-- Python 3.10+
-- PostgreSQL 15+ (running)
-- Redis 7+ (running)
-
----
-
-## Installation
-
-### 1. Clone the repository
-
-```bash
+Python 3.10+
+PostgreSQL 15+
+Redis 7+
+Git
+Docker Desktop (optional, for containerized deployment)
+1. Clone the Repository
 git clone https://github.com/sa-99nje-ev/election-operations-platform.git
-
 cd election-operations-platform
-```
-
-### 2. Create a virtual environment
-
-```bash
-python -m venv venv
-```
-
-**Windows**
-
-```bash
-venv\Scripts\activate
-```
-
-**Linux/macOS**
-
-```bash
-source venv/bin/activate
-```
-
----
-
-### 3. Install dependencies
-
-```bash
+2. Create a Virtual Environment
+Windows PowerShell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+Linux / macOS
+python3 -m venv .venv
+source .venv/bin/activate
+3. Install Dependencies
 pip install -r requirements.txt
-```
+⚙️ Configuration
 
----
+Create a .env file in the project root.
 
-### 4. Configure environment variables
+Example:
 
-Create the `.env` file.
-
-```bash
-cp .env.example .env
-```
-
-Update the values.
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/election_db
+DATABASE_URL=postgresql+asyncpg://election_user:password@localhost:5432/election_db
 REDIS_URL=redis://localhost:6379/0
 SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret
-```
 
----
+Do not commit real secrets to Git.
 
-### 5. Apply database migrations
+🗄️ Database Setup
 
-```bash
+Make sure PostgreSQL is running and the configured database exists.
+
+Then apply all Alembic migrations:
+
 alembic upgrade head
-```
 
----
+Check the current migration:
 
-### 6. Start the FastAPI server
+alembic current
 
-```bash
+View the migration history:
+
+alembic history
+
+The final migration chain establishes the complete database schema and performance indexes.
+
+▶️ Running the Application
+
+Start the FastAPI server:
+
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
 
-Swagger UI
+The API will be available at:
 
-```
+http://localhost:8000
+
+Swagger UI:
+
 http://localhost:8000/docs
-```
 
----
+ReDoc:
 
-### 7. Start the ARQ Worker
+http://localhost:8000/redoc
+⚙️ Running the ARQ Worker
 
-```bash
-arq worker app.workers.arq_worker.WorkerSettings
-```
+Start the asynchronous vote-processing worker:
 
-*(Replace with the actual worker module used in your project if different.)*
+arq app.arq_worker.WorkerSettings
 
----
+The worker consumes background tasks from Redis and performs asynchronous vote processing.
 
-# 🧪 Testing
+🧪 Testing
 
-Run all tests
+Run the complete test suite:
 
-```bash
-pytest -v --tb=short
-```
+pytest tests/ -v --tb=short
 
-Run performance tests
+Run performance tests:
 
-```bash
-pytest tests/performance -v
-```
+pytest tests/performance/ -v
 
-Run coverage
+Run unit tests:
 
-```bash
-pytest -v --cov=app --cov-report=term-missing
-```
+pytest tests/unit/ -v
 
----
+Run coverage:
 
-# 📊 Load Testing
+pytest --cov=app --cov-report=xml --cov-report=term-missing tests/
+✅ Final Validation
 
-```bash
-locust -f locustfile.py --host http://localhost:8000
-```
+The final project validation successfully achieved:
 
-Open
+11 tests passed
+Flake8 critical checks: 0 errors
+Coverage report: generated
+Docker build: successful
+Docker Compose validation: successful
+GitHub Actions CI: successful
 
-```
-http://localhost:8089
-```
+The automated CI pipeline validates both the application and containerized deployment configuration.
 
-to configure the load test.
+🔍 Code Quality
 
----
+Run the critical Flake8 checks:
 
-# 🐳 Docker Deployment
+flake8 app/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
-Build and start
+Run Git whitespace validation:
 
-```bash
-docker-compose up --build
-```
+git diff --check
 
-Services
+Optional formatting:
 
-- FastAPI → http://localhost:8000
-- PostgreSQL → localhost:5432
-- Redis → localhost:6379
-- ARQ Worker
+black app/ tests/
+isort app/ tests/
+📊 Performance & Load Testing
 
-Stop services
+Run the performance test suite:
 
-```bash
-docker-compose down
-```
+pytest tests/performance/ -v
+The performance suite covers:
 
----
+API latency
+Database persistence
+Election integrity
+Vote submission pipeline
+Worker scaling
+System capacity under increasing workloads
+🐳 Docker Deployment
 
-# 📌 API Endpoints
+Build and start all services:
 
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/auth/login` | Login |
-| POST | `/auth/refresh` | Refresh JWT |
-| GET | `/auth/me` | Current user |
-| POST | `/constituencies` | Create constituency |
-| GET | `/constituencies` | List constituencies |
-| POST | `/booths` | Create polling booth |
-| GET | `/booths` | List polling booths |
-| POST | `/candidates` | Register candidate |
-| GET | `/candidates` | List candidates |
-| POST | `/voters` | Register voter |
-| GET | `/voters` | List voters |
-| GET | `/voters/{id}` | Get voter |
-| POST | `/vote` | Cast vote |
-| GET | `/health` | Health check |
+docker compose up --build
 
-Swagger Documentation
+Run in detached mode:
 
-```
+docker compose up -d --build
+
+Stop services:
+
+docker compose down
+
+Rebuild without cache:
+
+docker compose build --no-cache
+
+Typical services include:
+
+FastAPI       → localhost:8000
+PostgreSQL    → localhost:5432
+Redis         → localhost:6379
+ARQ Worker
+🔐 Security
+
+The application incorporates several security mechanisms:
+
+JWT authentication
+Role-based authorization
+Password hashing
+Refresh-token management
+Token invalidation
+Database-level foreign-key constraints
+Unique constraints
+Audit logging
+Rate limiting
+Environment-based secret configuration
+Dependency vulnerability auditing with pip-audit
+Static security analysis with Bandit
+
+Production deployments should use strong, externally managed secrets rather than the example values shown in this README.
+
+🗳️ Vote Processing Flow
+Client
+  │
+  │ POST /vote
+  ▼
+FastAPI
+  │
+  │ Validate request
+  ▼
+Authentication / Authorization
+  │
+  │ Generate / validate request_id
+  ▼
+Redis / ARQ Queue
+  │
+  ▼
+ARQ Worker
+  │
+  ├── Validate voter
+  ├── Validate candidate
+  ├── Validate polling booth
+  ├── Check idempotency
+  ├── Persist voting record
+  └── Record audit information
+  │
+  ▼
+PostgreSQL
+
+The request_id mechanism prevents duplicate processing of the same vote request.
+
+📌 Core API Endpoints
+Method    Endpoint    Description
+POST    /auth/login    Authenticate a user
+POST    /auth/refresh    Refresh authentication token
+GET    /auth/me    Retrieve current user
+POST    /constituencies    Create constituency
+GET    /constituencies    List constituencies
+POST    /booths    Create polling booth
+GET    /booths    List polling booths
+POST    /candidates    Register candidate
+GET    /candidates    List candidates
+POST    /voters    Register voter
+GET    /voters    List voters
+GET    /voters/{id}    Retrieve voter
+POST    /vote    Submit a vote
+GET    /health    Application health check
+
+For the authoritative API contract, use the generated Swagger documentation:
+
 http://localhost:8000/docs
-```
+🗃️ Database Schema
 
----
+The platform contains the following primary tables:
 
-# 📄 License
+users
+constituencies
+voters
+candidates
+polling_booths
+voting_records
+audit_logs
+refresh_tokens
+
+Key relationships include:
+
+Constituency
+ ├── Voters
+ ├── Candidates
+ └── Polling Booths
+
+Voter
+ └── Voting Records
+
+Candidate
+ └── Voting Records
+
+Polling Booth
+ └── Voting Records
+
+User
+ ├── Audit Logs
+ ├── Refresh Tokens
+ ├── Voters
+ └── Candidates
+
+The voting record maintains relationships to the voter, candidate, and polling booth while enforcing database-level foreign-key integrity.
+
+🔄 Database Migration History
+
+The final migration chain establishes the schema from an empty PostgreSQL database:
+
+20577bf67e5c
+    │
+    ▼
+002_performance_indexes
+    │
+    ▼
+917949da489c
+    │
+    ▼
+HEAD
+
+Apply the complete chain with:
+
+alembic upgrade head
+🔄 CI/CD Pipeline
+
+GitHub Actions performs automated validation on repository changes.
+
+The pipeline validates:
+
+Code
+ │
+ ├── Linting
+ │
+ ├── Test Suite
+ │
+ ├── Coverage
+ │
+ └── Docker Build / Compose Validation
+
+A successful pipeline confirms that the application, tests, database integration, and Docker configuration remain valid in the CI environment.
+
+📦 Requirements
+
+Main dependencies include:
+
+FastAPI
+Uvicorn
+SQLAlchemy
+asyncpg
+psycopg
+aiosqlite
+Alembic
+ARQ
+Redis
+Pydantic
+pydantic-settings
+python-jose
+Passlib
+bcrypt
+SlowAPI
+Pytest
+pytest-asyncio
+pytest-cov
+HTTPX
+Factory Boy
+Locust
+Black
+isort
+mypy
+Flake8
+Bandit
+pip-audit
+
+See requirements.txt for the complete dependency specification.
+
+📄 License
 
 MIT License
 
----
+👤 Author
 
-# 👤 Author
+sa-99nje-ev
 
-**sa-99nje-ev**
+GitHub: sa-99nje-ev
 
-GitHub: **https://github.com/sa-99nje-ev**
+🏁 Project Status
+
+COMPLETE ✅
+The final implementation has been validated locally and through GitHub Actions.
+Election Operations Platform — Final Version
