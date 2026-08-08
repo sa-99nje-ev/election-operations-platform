@@ -23,3 +23,5 @@ instance/
 .idea/
 Thumbs.db
 Desktop.ini
+
+schema_inspection/
