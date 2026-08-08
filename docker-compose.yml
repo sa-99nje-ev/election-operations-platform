@@ -1,74 +1,101 @@
-version: '3.8'
+﻿services:
 
-services:
   postgres:
     image: postgres:15-alpine
     container_name: election_postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-election_db}
-      POSTGRES_USER: ${POSTGRES_USER:-election_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-election_secret_pass}
+      POSTGRES_DB: election_db
+      POSTGRES_USER: election_user
+      POSTGRES_PASSWORD: election_password
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-election_user} -d ${POSTGRES_DB:-election_db}"]
+      test: ["CMD-SHELL", "pg_isready -U election_user -d election_db"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: election_redis
     ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: election_api
-    command: gunicorn --bind 0.0.0.0:5000 --workers 4 "app:create_app()"
-    ports:
-      - "${API_PORT:-5000}:5000"
     environment:
-      - FLASK_ENV=${FLASK_ENV:-production}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-election_user}:${POSTGRES_PASSWORD:-election_secret_pass}@postgres:5432/${POSTGRES_DB:-election_db}
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-prod_super_secret_key_change_me_12345}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt_super_secret_key_change_me_12345}
+      DATABASE_URL: postgresql+asyncpg://election_user:election_password@postgres:5432/election_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SECRET_KEY: ${SECRET_KEY:-docker_secret_key}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-docker_jwt_secret_key}
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: election_worker
-    command: celery -A app.celery_app.celery worker --loglevel=info -c 4
+    command: arq app.workers.voting_worker.WorkerSettings
     environment:
-      - FLASK_ENV=${FLASK_ENV:-production}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-election_user}:${POSTGRES_PASSWORD:-election_secret_pass}@postgres:5432/${POSTGRES_DB:-election_db}
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-prod_super_secret_key_change_me_12345}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt_super_secret_key_change_me_12345}
+      DATABASE_URL: postgresql+asyncpg://election_user:election_password@postgres:5432/election_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SECRET_KEY: ${SECRET_KEY:-docker_secret_key}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-docker_jwt_secret_key}
+      ENVIRONMENT: production
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: election_dashboard
+    environment:
+      DATABASE_URL: postgresql+asyncpg://election_user:election_password@postgres:5432/election_db
+      DASHBOARD_PORT: 8050
+      ENVIRONMENT: production
+    ports:
+      - "8050:8050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8050/')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:
