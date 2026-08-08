@@ -89,11 +89,16 @@ The system separates API handling, business logic, persistence, background proce
 - Election-result retrieval
 
 ### ⚙️ Asynchronous Processing
-Vote-processing operations are designed to support asynchronous background execution using:
-- ARQ
-- Redis
-- Async SQLAlchemy
-- PostgreSQL
+Vote-processing operations are handled through an ARQ background worker backed by Redis.
+
+The worker:
+- Receives queued vote-processing tasks
+- Validates voter/candidate/booth identifiers
+- Prevents duplicate votes
+- Persists voting records through SQLAlchemy
+- Updates candidate tallies in Redis
+- Handles database integrity errors
+- Returns processing status and request IDs
 
 This allows request handling and background processing to remain separated.
 
@@ -172,6 +177,32 @@ Display migration history:
 ```bash
 alembic history
 ```
+
+---
+
+## 🔌 API
+
+The platform exposes RESTful API endpoints for authentication, election-domain management, voting, health monitoring, and result retrieval.
+
+### Core API Areas
+
+- **Authentication** — User authentication and token management
+- **Constituencies** — Constituency creation and retrieval
+- **Candidates** — Candidate creation and retrieval
+- **Voters** — Voter creation and retrieval
+- **Polling Booths** — Booth creation and retrieval
+- **Voting** — Vote submission and processing
+- **Results** — Overall and constituency-level election results
+- **Health** — API health monitoring
+
+### Results Endpoints
+
+- `GET /results/overall`
+- `GET /results/constituency/{constituency_id}`
+
+### Health Endpoint
+
+- `GET /health`
 
 ---
 
@@ -360,11 +391,14 @@ pip install -r requirements.txt
 Create a `.env` file containing the required application configuration:
 ```
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/election_db
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6379/0
+REDIS_HOST=localhost
+REDIS_PORT=6379
+JWT_SECRET_KEY=your-secure-jwt-secret-key
 SECRET_KEY=your-secure-secret-key
 ```
 
-> **Note:** Do not commit credentials or secrets to the repository.
+> **Note:** These are placeholders. Do not commit real credentials or secrets to the repository. For running tests, a `TEST_DATABASE_URL` may also be required.
 
 **6. Apply database migrations**
 ```bash
@@ -387,6 +421,14 @@ FastAPI's interactive documentation is available at `http://localhost:8000/docs`
 election-operations-platform/
 │
 ├── app/
+│   ├── api/
+│   │   ├── auth.py
+│   │   ├── domain.py
+│   │   └── voting.py
+│   │
+│   ├── config/
+│   │   └── ...
+│   │
 │   ├── core/
 │   │   ├── security.py
 │   │   └── ...
@@ -401,14 +443,32 @@ election-operations-platform/
 │   │   ├── audit_log.py
 │   │   └── refresh_token.py
 │   │
+│   ├── repositories/
+│   │   └── ...
+│   │
+│   ├── routers/
+│   │   ├── auth.py
+│   │   ├── booths.py
+│   │   ├── candidates.py
+│   │   ├── constituencies.py
+│   │   ├── results.py
+│   │   ├── vote.py
+│   │   └── voters.py
+│   │
+│   ├── schemas/
+│   │   └── ...
+│   │
 │   ├── services/
+│   │   └── ...
+│   │
+│   ├── utils/
 │   │   └── ...
 │   │
 │   ├── workers/
 │   │   └── voting_worker.py
 │   │
 │   ├── database.py
-│   └── ...
+│   └── main.py
 │
 ├── migrations/
 │   ├── env.py
@@ -427,7 +487,6 @@ election-operations-platform/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── alembic.ini
-├── locustfile.py
 ├── requirements.txt
 ├── pytest.ini
 └── README.md
