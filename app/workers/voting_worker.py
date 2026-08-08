@@ -3,7 +3,7 @@ ARQ Background Worker for processing queued votes.
 """
 
 import logging
-import os
+import uuid
 
 from arq.connections import RedisSettings
 from sqlalchemy import select
@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database import AsyncSessionLocal
 from app.models.voting_record import VotingRecord
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("arq.worker")
@@ -21,11 +22,11 @@ async def process_vote_task(ctx, vote_data: dict):
     Processes an enqueued vote, commits it to the database,
     and handles duplicate vote attempts.
     """
-
     request_id = vote_data.get("request_id")
-    voter_id = vote_data.get("voter_id")
-    candidate_id = vote_data.get("candidate_id")
-    booth_id = vote_data.get("booth_id")
+
+    voter_id = uuid.UUID(vote_data["voter_id"])
+    candidate_id = uuid.UUID(vote_data["candidate_id"])
+    booth_id = uuid.UUID(vote_data["booth_id"])
 
     async with AsyncSessionLocal() as session:
         try:
@@ -37,23 +38,24 @@ async def process_vote_task(ctx, vote_data: dict):
 
             if existing_record:
                 logger.warning(
-                    "Duplicate vote blocked for Voter ID: %s",
-                    voter_id
+                    f"Duplicate vote blocked for Voter ID: {voter_id}"
                 )
-                return
+                return {
+                    "status": "DUPLICATE",
+                    "request_id": request_id
+                }
 
             record = VotingRecord(
                 voter_id=voter_id,
                 candidate_id=candidate_id,
-                booth_id=booth_id
+                polling_booth_id=booth_id
             )
 
             session.add(record)
             await session.commit()
 
             logger.info(
-                "Vote processed successfully for Request ID: %s",
-                request_id
+                f"Vote processed successfully for Request ID: {request_id}"
             )
 
             redis_pool = ctx.get("redis")
@@ -65,22 +67,31 @@ async def process_vote_task(ctx, vote_data: dict):
                     1
                 )
 
+            return {
+                "status": "SUCCESS",
+                "request_id": request_id
+            }
+
         except IntegrityError:
             await session.rollback()
 
             logger.warning(
-                "Duplicate vote blocked by DB constraint for Voter ID: %s",
-                voter_id
+                f"Duplicate vote blocked by DB constraint "
+                f"for Voter ID: {voter_id}"
             )
+
+            return {
+                "status": "DUPLICATE",
+                "request_id": request_id
+            }
 
         except Exception as exc:
             await session.rollback()
 
-            logger.error(
-                "Vote processing failed: %s",
-                exc,
-                exc_info=True
+            logger.exception(
+                f"Vote processing failed for Request ID: {request_id}: {exc}"
             )
+
             raise
 
 
@@ -88,6 +99,6 @@ class WorkerSettings:
     functions = [process_vote_task]
 
     redis_settings = RedisSettings(
-        host=os.getenv("REDIS_HOST", "localhost"),
-        port=int(os.getenv("REDIS_PORT", "6379")),
+        host="localhost",
+        port=6379
     )

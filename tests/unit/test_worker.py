@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import app.models  # Force-load SQLAlchemy mapper registry
 from app.database import Base
-from app.arq_worker import process_vote_task
+from app.workers.voting_worker import process_vote_task
 from tests.factories import PollingBoothFactory
 
 
@@ -18,12 +18,12 @@ from tests.factories import PollingBoothFactory
 async def in_memory_db():
     """Isolated, zero-friction in-memory database context."""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
+
     yield session_factory
 
     async with engine.begin() as conn:
@@ -52,7 +52,7 @@ async def test_process_vote_task_execution(in_memory_db):
         "booth_id": str(booth_id)
     }
 
-    with patch("app.arq_worker.AsyncSessionLocal", in_memory_db):
+    with patch("app.workers.voting_worker.AsyncSessionLocal", in_memory_db):
         result = await process_vote_task({}, vote_payload)
 
     assert result["status"] == "SUCCESS"
